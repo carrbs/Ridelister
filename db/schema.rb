@@ -20,11 +20,8 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_13_174948) do
   create_table "rides", force: :cascade do |t|
     t.string "start_address"
     t.string "destination_address"
-    t.integer "driver_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["driver_id"], name: "index_rides_on_driver_id"
   end
 
-  add_foreign_key "rides", "drivers"
 end
