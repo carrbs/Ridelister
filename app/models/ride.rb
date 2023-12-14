@@ -3,29 +3,51 @@
 # Ride Class
 class Ride < ApplicationRecord
   validates :start_address, :destination_address, presence: true
-  belongs_to :driver
 
-  def commute_distance
-    # Calculate the driving distance from the driver's home address to the start of the ride
+  # The ride earnings is how much the driver earns by driving the ride.
+  # It takes into account both the amount of time the ride is expected
+  # to take and the distance. For the purposes of this exercise, it is
+  # calculated as:
+  # $12 + $1.50 per mile beyond 5 miles + (ride duration) * $0.70 per minute beyond 15 minutes
+  def ride_earnings(ride_distance, ride_duration)
+    per_mile_earnings = 1.5
+    per_minute_earnings = 0.7
+    total_earnings = 12
+
+    total_earnings += [ride_distance - 5, 0].max * per_mile_earnings
+    total_earnings += [ride_duration - 15, 0].max * per_minute_earnings
+
+    total_earnings
   end
 
-  def commute_duration
-    # Calculate the amount of time it is expected to take to drive the commute distance
+  def fetch_ride(drivers_home_address)
+    ride_distance, ride_duration = fetch_directions(start_address, destination_address)
+    commute_distance, commute_duration = fetch_directions(drivers_home_address, start_address)
+    score = score(ride_distance, ride_duration, commute_duration)
+
+    # TODO: Discuss the need for the commute, and score.
+    #       I put them in to verify as I was working through the exercise.
+    {
+      score:,
+      ride_distance:,
+      ride_duration:,
+      commute_distance:,
+      commute_duration:
+    }
   end
 
-  def ride_distance
-    # Calculate the driving distance from the start address of the ride to the destination address
+  private
+
+  # Calculates the score of a ride in $ per hour as:
+  # (ride earnings) / (commute duration + ride duration).
+  def score(ride_distance, ride_duration, commute_duration)
+    earnings = ride_earnings(ride_distance, ride_duration)
+    earnings / (commute_duration + ride_duration)
   end
 
-  def ride_duration
-    # Calculate the amount of time it is expected to take to drive the ride distance
-  end
-
-  def ride_earnings
-    # Calculate the ride earnings
-  end
-
-  def score
-    # Calculate the score of a ride in $ per hour as: (ride earnings) / (commute duration + ride duration)
+  def fetch_directions(start_address, end_address)
+    Rails.cache.fetch("#{start_address}/#{end_address}/directions", expires_in: 1.minutes) do
+      DirectionService.new(start_address, end_address).fetch_directions
+    end
   end
 end
