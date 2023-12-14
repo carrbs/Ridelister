@@ -48,3 +48,6 @@ group :development do
 end
 
 gem 'rubocop', require: false
+
+gem 'httparty', '~> 0.18.1'
+gem 'kaminari', '~> 1.2.1'
