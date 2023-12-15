@@ -3,6 +3,8 @@
 # Ride Class
 class Ride < ApplicationRecord
   validates :start_address, :destination_address, presence: true
+  geocoded_by :start_address, latitude: :start_latitude, longitude: :start_longitude
+  after_validation :geocode, if: :start_address_changed?
 
   # The ride earnings is how much the driver earns by driving the ride.
   # It takes into account both the amount of time the ride is expected
