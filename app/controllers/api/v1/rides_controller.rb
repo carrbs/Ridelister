@@ -17,7 +17,7 @@ module Api
       end
 
       def ride_params
-        params.permit(:driver_id, :proximity, :page)
+        params.permit(:driver_id, :proximity, :page, :rides_per_page)
       end
 
       private
@@ -70,9 +70,9 @@ module Api
         rides
       end
 
-      def paginate_rides
+      def paginate_rides # rubocop:disable Metrics/AbcSize
         page = ride_params[:page].to_i
-        per_page = 5
+        per_page = ride_params[:rides_per_page].present? ? ride_params[:rides_per_page].to_i : 5
         @total_pages = @rides.size / per_page
         @total_pages += 1 if @rides.size % per_page != 0
         @rides = @rides[(page - 1) * per_page, per_page]
