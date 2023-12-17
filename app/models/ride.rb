@@ -3,6 +3,8 @@
 # Ride Class
 class Ride < ApplicationRecord
   validates :start_address, :destination_address, presence: true
+  geocoded_by :start_address, latitude: :start_latitude, longitude: :start_longitude
+  after_validation :geocode, if: :start_address_changed?
 
   # The ride earnings is how much the driver earns by driving the ride.
   # It takes into account both the amount of time the ride is expected
@@ -45,6 +47,7 @@ class Ride < ApplicationRecord
     earnings / (commute_duration + ride_duration)
   end
 
+  # NOTE: Cache length could be adjusted, one minute was useful for testing.
   def fetch_directions(start_address, end_address)
     Rails.cache.fetch("#{start_address}/#{end_address}/directions", expires_in: 1.minutes) do
       DirectionService.new(start_address, end_address).fetch_directions
