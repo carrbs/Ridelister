@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_12_14_235534) do
+ActiveRecord::Schema[7.1].define(version: 2023_12_17_195840) do
   create_table "drivers", charset: "utf8", force: :cascade do |t|
     t.string "home_address"
     t.datetime "created_at", null: false
@@ -24,8 +24,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_14_235534) do
     t.datetime "updated_at", null: false
     t.float "start_latitude"
     t.float "start_longitude"
-    t.index ["start_latitude"], name: "index_rides_on_start_latitude"
-    t.index ["start_longitude"], name: "index_rides_on_start_longitude"
+    t.index ["start_latitude", "start_longitude"], name: "index_rides_on_start_latitude_and_start_longitude"
   end
 
 end

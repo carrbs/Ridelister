@@ -47,6 +47,7 @@ class Ride < ApplicationRecord
     earnings / (commute_duration + ride_duration)
   end
 
+  # NOTE: Cache length could be adjusted, one minute was useful for testing.
   def fetch_directions(start_address, end_address)
     Rails.cache.fetch("#{start_address}/#{end_address}/directions", expires_in: 1.minutes) do
       DirectionService.new(start_address, end_address).fetch_directions

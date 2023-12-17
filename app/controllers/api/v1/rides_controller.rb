@@ -22,8 +22,12 @@ module Api
 
       private
 
+      def fetch_ride_details(ride)
+        ride.fetch_ride(@driver_home_address)
+      end
+
       def jsonify_ride(ride) # rubocop:disable Metrics/MethodLength
-        ride_details = ride.fetch_ride(@driver_home_address)
+        ride_details = fetch_ride_details(ride)
         {
           id: ride.id,
           start_address: ride.start_address,
@@ -42,8 +46,7 @@ module Api
 
       def set_rides
         @rides = if ride_params[:proximity].present?
-                   Ride.near(@driver_home_address,
-                             ride_params[:proximity])
+                   Ride.near(@driver_home_address, ride_params[:proximity])
                  else
                    find_rides_near_driver
                  end
