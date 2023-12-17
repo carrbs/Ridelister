@@ -16,6 +16,10 @@ module Api
         }
       end
 
+      def ride_params
+        params.permit(:driver_id, :proximity, :page)
+      end
+
       private
 
       def jsonify_ride(ride) # rubocop:disable Metrics/MethodLength
@@ -33,15 +37,38 @@ module Api
       end
 
       def set_driver_home_address
-        @driver_home_address = Driver.find(params[:driver_id]).home_address
+        @driver_home_address = Driver.find(ride_params[:driver_id]).home_address
       end
 
       def set_rides
-        @rides = Ride.all.to_a.sort_by { |ride| -ride.fetch_ride(@driver_home_address)[:score] }
+        @rides = if ride_params[:proximity].present?
+                   Ride.near(@driver_home_address,
+                             ride_params[:proximity])
+                 else
+                   find_rides_near_driver
+                 end
+
+        @rides = @rides.sort_by { |ride| -ride.fetch_ride(@driver_home_address)[:score] }
+      end
+
+      def find_rides_near_driver
+        max_proximity = 20
+        minimum_total_rides = 15
+        current_proximity = 1
+        rides = []
+
+        while current_proximity <= max_proximity
+          rides = Ride.near(@driver_home_address, current_proximity)
+          break if rides.size >= minimum_total_rides
+
+          current_proximity *= 2
+        end
+
+        rides
       end
 
       def paginate_rides
-        page = params[:page].to_i
+        page = ride_params[:page].to_i
         per_page = 5
         @total_pages = @rides.size / per_page
         @total_pages += 1 if @rides.size % per_page != 0
