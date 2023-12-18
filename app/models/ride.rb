@@ -43,8 +43,11 @@ class Ride < ApplicationRecord
   # Calculates the score of a ride in $ per hour as:
   # (ride earnings) / (commute duration + ride duration).
   def score(ride_distance, ride_duration, commute_duration)
+    # TODO: make this edge case be error handling instead of back-of-napkin math.
+    total_duration = (commute_duration + ride_duration).zero? ? 0.1 : commute_duration + ride_duration
+
     earnings = ride_earnings(ride_distance, ride_duration)
-    earnings / (commute_duration + ride_duration)
+    earnings / total_duration
   end
 
   # NOTE: Cache length could be adjusted, one minute was useful for testing.
@@ -52,5 +55,7 @@ class Ride < ApplicationRecord
     Rails.cache.fetch("#{start_address}/#{end_address}/directions", expires_in: 1.minutes) do
       DirectionService.new(start_address, end_address).fetch_directions
     end
+  rescue DirectionService::DirectionServiceError => e
+    raise e
   end
 end

@@ -6,6 +6,9 @@ module Api
     class RidesController < ApplicationController
       before_action :set_driver_home_address
       before_action :set_rides
+      before_action :set_rides_per_page
+      before_action :calculate_total_pages
+      before_action :set_page
       before_action :paginate_rides
 
       def index
@@ -23,7 +26,7 @@ module Api
       private
 
       def fetch_ride_details(ride)
-        ride.fetch_ride(@driver_home_address)
+        ride.fetch_ride(@driver_home_address) || (raise ActiveRecord::RecordInvalid, ride)
       end
 
       def jsonify_ride(ride) # rubocop:disable Metrics/MethodLength
@@ -38,20 +41,50 @@ module Api
           commute_distance: ride_details[:commute_distance],
           commute_duration: ride_details[:commute_duration]
         }
+      rescue ActiveRecord::RecordInvalid => e
+        { error: e.record.errors.full_messages.join(', ') }
       end
 
       def set_driver_home_address
-        @driver_home_address = Driver.find(ride_params[:driver_id]).home_address
+        driver_id = ride_params[:driver_id].to_i
+        unless driver_id.positive?
+          render json: { error: 'Invalid driver_id parameter, must be a positive integer' }, status: :bad_request
+          return
+        end
+
+        @driver_home_address = Driver.find(driver_id).home_address
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: 'Driver not found' }, status: :not_found
       end
 
-      def set_rides
+      def set_rides # rubocop:disable Metrics/AbcSize,Metrics/MethodLength
+        max_proximity = 100
         @rides = if ride_params[:proximity].present?
+                   begin
+                     proximity = Float(ride_params[:proximity])
+                   rescue ArgumentError
+                     render json: { error: 'Invalid proximity parameter, must be a number' }, status: :bad_request
+                     return
+                   end
+
+                   if proximity.negative?
+                     render json: { error: 'Invalid proximity parameter, must be positive' }, status: :bad_request
+                     return
+                   end
+                   if proximity > max_proximity
+                     render json: { error: "Invalid proximity parameter, must be less than #{max_proximity}" },
+                            status: :bad_request
+                     return
+                   end
+
                    Ride.near(@driver_home_address, ride_params[:proximity])
                  else
                    find_rides_near_driver
                  end
 
         @rides = @rides.sort_by { |ride| -ride.fetch_ride(@driver_home_address)[:score] }
+      rescue DirectionService::DirectionServiceError => e
+        render json: { error: e.message }, status: :service_unavailable
       end
 
       def find_rides_near_driver
@@ -70,12 +103,27 @@ module Api
         rides
       end
 
-      def paginate_rides # rubocop:disable Metrics/AbcSize
-        page = ride_params[:page].to_i
-        per_page = ride_params[:rides_per_page].present? ? ride_params[:rides_per_page].to_i : 5
-        @total_pages = @rides.size / per_page
-        @total_pages += 1 if @rides.size % per_page != 0
-        @rides = @rides[(page - 1) * per_page, per_page]
+      def set_rides_per_page
+        @rides_per_page = ride_params[:rides_per_page].present? ? ride_params[:rides_per_page].to_i : 5
+        return if @rides_per_page.positive?
+
+        render json: { error: 'Invalid rides per page' }, status: :bad_request
+      end
+
+      def calculate_total_pages
+        @total_pages = (@rides.size / @rides_per_page.to_f).ceil
+      end
+
+      def set_page
+        @current_page = (ride_params[:page].presence || 1).to_i
+        return unless @current_page < 1 || (@total_pages.positive? && @current_page > @total_pages)
+
+        render json: { error: 'Invalid page number' }, status: :bad_request
+      end
+
+      def paginate_rides
+        @rides = @rides[(@current_page - 1) * @rides_per_page, @rides_per_page]
+        @rides ||= [] # rubocop:disable Naming/MemoizedInstanceVariableName
       end
     end
   end
