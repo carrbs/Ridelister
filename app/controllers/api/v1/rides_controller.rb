@@ -2,7 +2,7 @@
 
 module Api
   module V1
-    # class RidesController < ApplicationController
+    # RidesController handles API requests for rides
     class RidesController < ApplicationController
       before_action :set_driver_home_address
       before_action :set_rides
@@ -47,7 +47,7 @@ module Api
 
       def set_driver_home_address
         driver_id = ride_params[:driver_id].to_i
-        unless driver_id.positive?
+        unless Integer(driver_id).positive?
           render json: { error: 'Invalid driver_id parameter, must be a positive integer' }, status: :bad_request
           return
         end
@@ -60,17 +60,12 @@ module Api
       def set_rides # rubocop:disable Metrics/AbcSize,Metrics/MethodLength
         max_proximity = 100
         @rides = if ride_params[:proximity].present?
-                   begin
-                     proximity = Float(ride_params[:proximity])
-                   rescue ArgumentError
-                     render json: { error: 'Invalid proximity parameter, must be a number' }, status: :bad_request
+                   unless Integer(ride_params[:proximity]).positive?
+                     render json: { error: 'Invalid proximity parameter, must be a positive integer' },
+                            status: :bad_request
                      return
                    end
 
-                   if proximity.negative?
-                     render json: { error: 'Invalid proximity parameter, must be positive' }, status: :bad_request
-                     return
-                   end
                    if proximity > max_proximity
                      render json: { error: "Invalid proximity parameter, must be less than #{max_proximity}" },
                             status: :bad_request
@@ -105,7 +100,7 @@ module Api
 
       def set_rides_per_page
         @rides_per_page = ride_params[:rides_per_page].present? ? ride_params[:rides_per_page].to_i : 5
-        return if @rides_per_page.positive?
+        return if Ineger(@rides_per_page).positive?
 
         render json: { error: 'Invalid rides per page' }, status: :bad_request
       end
@@ -122,8 +117,8 @@ module Api
       end
 
       def paginate_rides
-        @rides = @rides[(@current_page - 1) * @rides_per_page, @rides_per_page]
-        @rides ||= [] # rubocop:disable Naming/MemoizedInstanceVariableName
+        paginated_rides = @rides[(@current_page - 1) * @rides_per_page, @rides_per_page]
+        @rides = paginated_rides || []
       end
     end
   end
