@@ -54,20 +54,15 @@ module Api
 
         @driver_home_address = Driver.find(driver_id).home_address
       rescue ActiveRecord::RecordNotFound
-        render json: { error: 'Driver not found' }, status: :not_found
+        render json: { error: "Driver (ID: #{driver_id}) not found" }, status: :not_found
       end
 
       def set_rides # rubocop:disable Metrics/AbcSize,Metrics/MethodLength
         max_proximity = 100
         @rides = if ride_params[:proximity].present?
-                   unless Integer(ride_params[:proximity]).positive?
-                     render json: { error: 'Invalid proximity parameter, must be a positive integer' },
-                            status: :bad_request
-                     return
-                   end
-
-                   if proximity > max_proximity
-                     render json: { error: "Invalid proximity parameter, must be less than #{max_proximity}" },
+                   unless Integer(ride_params[:proximity]).positive? && ride_params[:proximity].to_i <= max_proximity
+                     msg = "Invalid proximity parameter, must be a positive integer less than #{max_proximity}"
+                     render json: { error: msg },
                             status: :bad_request
                      return
                    end
@@ -100,9 +95,9 @@ module Api
 
       def set_rides_per_page
         @rides_per_page = ride_params[:rides_per_page].present? ? ride_params[:rides_per_page].to_i : 5
-        return if Ineger(@rides_per_page).positive?
+        return if Integer(@rides_per_page).positive?
 
-        render json: { error: 'Invalid rides per page' }, status: :bad_request
+        render json: { error: 'Invalid rides per page, must be a positive integer' }, status: :bad_request
       end
 
       def calculate_total_pages
@@ -113,7 +108,7 @@ module Api
         @current_page = (ride_params[:page].presence || 1).to_i
         return unless @current_page < 1 || (@total_pages.positive? && @current_page > @total_pages)
 
-        render json: { error: 'Invalid page number' }, status: :bad_request
+        render json: { error: 'Invalid page number, must be a positive integer' }, status: :bad_request
       end
 
       def paginate_rides
