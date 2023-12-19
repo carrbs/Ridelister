@@ -8,24 +8,26 @@
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
 
-addresses = [
-  '7000 NE Airport Way, Portland, OR 97218',
-  '4001 SW Canyon Rd, Portland, OR 97221',
-  '1005 W Burnside St, Portland, OR 97209',
-  '1 N Center Ct St, Portland, OR 97227',
-  '1945 SE Water Ave, Portland, OR 97214'
+# Source: https://www.pps.net/Page/2142
+portland_high_school_addresses = [
+  '5405 SE Woodward St, Portland, OR 97206',
+  '3400 SE 26th Ave, Portland, OR 97202',
+  '3905 SE 91st Ave Portland, OR 97266',
+  '2245 NE 36th Avenue, Portland, OR 97212',
+  '1151 SW Vermont St, Portland, OR 97219'
 ]
 
-addresses.permutation(2).each do |start_address, destination_address|
+portland_high_school_addresses.permutation(2).each do |start_address, destination_address|
   Ride.create!(start_address:, destination_address:)
 end
 
+# Source: also https://www.pps.net/Page/2142
 driver_addresses = [
-  '111 SW 5th Ave, Portland, OR 97204',
-  '1300 SW 5th Ave, Portland, OR 97201',
-  '4012 SE 17th Ave, Portland, OR 97202',
-  '12000 SW 49th Ave, Portland, OR 97219',
-  '5000 N Willamette Blvd, Portland, OR 97203'
+  '2421 SE Orange Ave, Portland, OR 97214',
+  '2425 SW Vista St Portland, OR 97201',
+  '2732 NE Fremont St, Portland, OR 97212',
+  '5800 SE Division St, Portland, OR 97206',
+  '620 N Fremont St Portland, OR 97227'
 ]
 
 driver_addresses.each do |home_address|
