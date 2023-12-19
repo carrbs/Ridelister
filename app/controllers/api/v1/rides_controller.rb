@@ -75,6 +75,12 @@ module Api
         proximity.positive? && proximity <= MAX_USER_PROXIMITY
       end
 
+      # TODO: Discuss the algorithm for finding rides near the driver. This implementation
+      # focuses on finding rides within a certain proximity of the driver's home address.
+      # Searching all rides in the rides table is not scalable, so we are leveraging the geocoder
+      # gem to reduce the number of rides we're searching through.
+      # It handles an edge case where there are very few rides near the driver's home address.
+      # Depending on quantity and distribution of rides, we might consider a different approach.
       def find_rides_near_driver
         current_proximity = 1
         rides = []
@@ -90,25 +96,22 @@ module Api
       end
 
       def set_rides_per_page
-        @rides_per_page = ride_params[:rides_per_page].present? ? ride_params[:rides_per_page].to_i : 5
-        return if Integer(@rides_per_page).positive?
+        @rides_per_page = ride_params[:rides_per_page].presence&.to_i || 5
+        return if @rides_per_page.positive?
 
-        render json: { error: 'Invalid rides per page, must be a positive integer' }, status: :bad_request
-      end
-
-      def calculate_total_pages
-        @total_pages = (@rides.size / @rides_per_page.to_f).ceil
+        render json: { error: 'Invalid rides per_page, must be a positive integer' }, status: :bad_request
       end
 
       def set_page
-        @current_page = (ride_params[:page].presence || 1).to_i
-        return unless @current_page < 1 || (@total_pages.positive? && @current_page > @total_pages)
+        @current_page = ride_params[:page].presence&.to_i || 1
+        return if @current_page.positive?
 
         render json: { error: 'Invalid page number, must be a positive integer' }, status: :bad_request
       end
 
       def paginate_rides
-        paginated_rides = @rides[(@current_page - 1) * @rides_per_page, @rides_per_page]
+        paginated_rides = Kaminari.paginate_array(@rides).page(@current_page).per(@rides_per_page)
+        @total_pages = paginated_rides.total_pages
         @rides = paginated_rides || []
       end
     end
