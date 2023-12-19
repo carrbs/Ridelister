@@ -4,13 +4,14 @@ module Api
   module V1
     # RidesController handles API requests for rides
     class RidesController < ApplicationController
-      before_action :set_driver_home_address
-      before_action :set_rides
-      before_action :set_rides_per_page
-      before_action :calculate_total_pages
-      before_action :set_page
-      before_action :paginate_rides
+      MAX_DEFAULT_PROXIMITY = 20
+      MAX_USER_PROXIMITY = 100
+      MINIMUM_TOTAL_RIDES = 15
+      DEFAULT_RIDES_PER_PAGE = 5
+      DEFAULT_PAGE = 1
 
+      before_action :set_driver_home_address, :set_rides, :set_rides_per_page, :set_page, :paginate_rides,
+                    only: [:index]
       def index
         render json: {
           driver_address: @driver_home_address,
@@ -57,16 +58,8 @@ module Api
         render json: { error: "Driver (ID: #{driver_id}) not found" }, status: :not_found
       end
 
-      def set_rides # rubocop:disable Metrics/AbcSize,Metrics/MethodLength
-        max_proximity = 100
-        @rides = if ride_params[:proximity].present?
-                   unless Integer(ride_params[:proximity]).positive? && ride_params[:proximity].to_i <= max_proximity
-                     msg = "Invalid proximity parameter, must be a positive integer less than #{max_proximity}"
-                     render json: { error: msg },
-                            status: :bad_request
-                     return
-                   end
-
+      def set_rides
+        @rides = if valid_proximity?
                    Ride.near(@driver_home_address, ride_params[:proximity])
                  else
                    find_rides_near_driver
@@ -77,15 +70,18 @@ module Api
         render json: { error: e.message }, status: :service_unavailable
       end
 
+      def valid_proximity?
+        proximity = ride_params[:proximity].to_i
+        proximity.positive? && proximity <= MAX_USER_PROXIMITY
+      end
+
       def find_rides_near_driver
-        max_proximity = 20
-        minimum_total_rides = 15
         current_proximity = 1
         rides = []
 
-        while current_proximity <= max_proximity
+        while current_proximity <= MAX_DEFAULT_PROXIMITY
           rides = Ride.near(@driver_home_address, current_proximity)
-          break if rides.size >= minimum_total_rides
+          break if rides.size >= MINIMUM_TOTAL_RIDES
 
           current_proximity *= 2
         end

@@ -7,8 +7,6 @@ Optional parameters allow the caller to:
 - request a specific page number
 - customize the quantity rides per page
 
-
-
 ### Request
 
 `GET /api/v1/rides`
