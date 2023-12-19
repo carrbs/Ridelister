@@ -47,7 +47,7 @@ class Ride < ApplicationRecord
     total_duration = (commute_duration + ride_duration).zero? ? 0.1 : commute_duration + ride_duration
 
     earnings = ride_earnings(ride_distance, ride_duration)
-    earnings / total_duration
+    (earnings.to_f / total_duration).round(2)
   end
 
   # NOTE: Cache length could be adjusted, one minute was useful for testing.
