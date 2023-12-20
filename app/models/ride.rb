@@ -6,6 +6,8 @@ class Ride < ApplicationRecord
   geocoded_by :start_address, latitude: :start_latitude, longitude: :start_longitude
   after_validation :geocode, if: :start_address_changed?
 
+  # TODO: Move all the magical numbers into constants up here
+
   # The ride earnings is how much the driver earns by driving the ride.
   # It takes into account both the amount of time the ride is expected
   # to take and the distance. For the purposes of this exercise, it is

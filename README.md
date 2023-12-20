@@ -36,6 +36,7 @@ Similar to the addresses in the Ride model, the driver's home address is a strin
 - The default behavior of the search also assumes rides starting near the driver's home address should be considered first. This was another design choice I made working with a small dataset of rides. This approach should be discussed and, driven by real world use cases, likely be revisited for optimization.
 - I'm caching the response data I care about from the Google Directions API. Caching the responses cuts down on how many calls we need to make to provide a "good" score for the rides. This is a simple cache,  with more historical data about traffic (at least), we might want to alter. It does help cut down on the calls to the service. I have it set to one minute because it's useful in the development phase for the cache to expire quickly.
 - The geocoder `.near()` method takes some time, we should also consider caching its response. We'd want to break the cache if a new ride was created that might be relevant to this Driver, but this is more logic than I had time to implement :beers:.
+- You will see many `TODO`s and `NOTE`s. For the purpose of this exercise, these are points of discussion or highlighted areas where I would have spent more time (given more time). Related to this point, many test have been added, but there are more tests (e.g., when is the cache used or not?) that could be written given more time.
 
 ## Prerequisites
 
