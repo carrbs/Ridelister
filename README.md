@@ -1,5 +1,5 @@
 # Ridelister
-"*Ridelister*" is my submission for the HopSkipDrive rails assessment. It is a Rails 7 application (using Ruby 3.2.2) that serves a RESTful API endpoint that returns a paginated JSON list of rides in descending score order for a given driver. Score is determined by this equation:
+"*Ridelister*" is my submission for the HopSkipDrive rails assessment. It is a Rails 7 application (using Ruby 3.2.2) serving a RESTful API endpoint that returns a paginated JSON list of rides in descending score order for a given driver. Score is determined by this equation:
 ```
 score (dollars per hour) = (ride earnings) / (commute duration + ride duration)
 ```
@@ -33,9 +33,9 @@ Similar to the addresses in the Ride model, the driver's home address is a strin
 
 - Google's Directions API is expensive. The design choice to use the geocoder gem (which should be discussed) pre-sorts the "best" rides, limiting the number of external and costly requests to the Google Directions API.
 - The rides table can get big, especially if we're not sharding the data based on geolocation. The geocoder gem can help us for this too, but indexing will stress the database on ride creations, so if we're getting a lot of writes, we should also shard.
-- The default behavior of the search also assumes rides starting near the driver's home address should be considered first. This was another design choice I made working with a small data-set of rides. This approach should be discussed and, driven by real world use cases, likely be revisited for optimization.
+- The default behavior of the search also assumes rides starting near the driver's home address should be considered first. This was another design choice I made working with a small dataset of rides. This approach should be discussed and, driven by real world use cases, likely be revisited for optimization.
 - I'm caching the response data I care about from the Google Directions API. Caching the responses cuts down on how many calls we need to make to provide a "good" score for the rides. This is a simple cache,  with more historical data about traffic (at least), we might want to alter. It does help cut down on the calls to the service. I have it set to one minute because it's useful in the development phase for the cache to expire quickly.
-- The geocoder `.near()` method takes some time, we should also consider caching it's response. We'd want to break the cache if a new ride was created that might be relevant to this Driver, but this is more logic than I had time to implement :beers:.
+- The geocoder `.near()` method takes some time, we should also consider caching its response. We'd want to break the cache if a new ride was created that might be relevant to this Driver, but this is more logic than I had time to implement :beers:.
 
 ## Prerequisites
 
@@ -43,22 +43,44 @@ Similar to the addresses in the Ride model, the driver's home address is a strin
 - Rails 7
 - MySQL 5.7+
 
+Ridelister is dependent on the [Google Directions API](https://developers.google.com/maps/documentation/directions/overview), and a valid environment variable (`GOOGLE_DIRECTIONS_API_KEY`) must be present to make requests to their API.
+
 ## Build
 1. Clone the repository
-2. run `bundle install`.
-4. **Set up the database:** Note: you may need to adjust your environment variables/credentials in config/databse.yml.
+2. Run `bundle install`.
+4. **Set up the database:** Note: you may need to adjust your environment variables/credentials in config/database.yml.
    1. Run the command `rails db:create` to create the database,
    1. Run the command `rails db:migrate` to run the migrations and set up the database schema.
    1. Run the command `rails db:seed` to add some development data (rides and drivers)
 
-## Run the Application
+## Running the Application
 Start the Rails server with `rails server`. The application will be available at `http://localhost:3000`.
 
-Specifics are in the API.md, but you can test the endpoint by running:
+Documentation for the API is in the [API.md file](API.md).
+### tl;dr example:
 ``` bash
-$ curl "http://localhost:3000/api/v1/rides?driver_id=1"
+$ curl "http://localhost:3000/api/v1/rides?driver_id=1" | jq
 ```
-
+### response:
+```json
+{
+  "driver_address": "111 SW 5th Ave, Portland, OR 97204",
+  "rides": [
+    {
+      "id": 11,
+      "start_address": "1005 W Burnside St, Portland, OR 97209",
+      "destination_address": "1 N Center Ct St, Portland, OR 97227",
+      "score": 1.25,
+      "distance": 2.7961695,
+      "duration": 6.3,
+      "commute_distance": 0.505795994,
+      "commute_duration": 3.316666666666667
+    },
+    // ... more rides ...
+  ],
+  "total_pages": 20
+}
+```
 
 ## Test
 

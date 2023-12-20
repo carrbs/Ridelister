@@ -1,3 +1,4 @@
+# API Documentation for Ridelister
 ## GET Rides
 
 GET Rides returns a paginated JSON list of rides in descending score order for a given driver.
