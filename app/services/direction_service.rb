@@ -25,7 +25,7 @@ class DirectionService
 
   # TODO: puts statement should be converted to logging statements.
   def set_directions_from_google
-    puts "Fetching directions from #{@start_address} to #{@end_address}"
+    # puts "Fetching directions from #{@start_address} to #{@end_address}"
     @response = self.class.get(DIRECTIONS_URL,
                                query: { origin: @start_address, destination: @end_address, key: GOOGLE_API_KEY })
 
