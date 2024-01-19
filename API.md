@@ -1,34 +1,44 @@
 # API Documentation for Ridelister
+
 ## GET Rides
 
 GET Rides returns a paginated JSON list of rides in descending score order for a given driver.
 
 Optional parameters allow the caller to:
+
 - specify a proximity to search for rides, based on the given `driver_id`.
 - request a specific page number
-- customize the quantity rides per page
+- customize the quantity of rides per page
 
 ### Request
 
 `GET /api/v1/rides`
 
 #### Parameters
+
 ---
-|**`driver_id`** `int` (required)|
-|---|
-|The `id` of the driver.|
+
+| **`driver_id`** `int` (required) |
+| -------------------------------- |
+| The `id` of the driver.          |
+
 ---
-|`proximity` `int` (optional)|
-|---|
-|The maximum distance (in miles) from the driver's home address to consider rides.|
+
+| `proximity` `int` (optional)                                                      |
+| --------------------------------------------------------------------------------- |
+| The maximum distance (in miles) from the driver's home address to consider rides. |
+
 ---
-|`page` `int` (optional)|
-|---|
-|The page number to retrieve. Defaults to 1.|
+
+| `page` `int` (optional)                     |
+| ------------------------------------------- |
+| The page number to retrieve. Defaults to 1. |
+
 ---
-|`rides_per_page` `int` (optional)|
-|---|
-|The number of rides to return per page. Defaults to 5.|
+
+| `rides_per_page` `int` (optional)                      |
+| ------------------------------------------------------ |
+| The number of rides to return per page. Defaults to 5. |
 
 #### Example
 
@@ -63,7 +73,7 @@ curl -X GET 'http://localhost:3000/api/v1/rides?driver_id=1&proximity=10&page=1&
       "duration": 6.3,
       "commute_distance": 0.505795994,
       "commute_duration": 3.316666666666667
-    },
+    }
     // ... more rides ...
   ],
   "total_pages": 20
@@ -71,7 +81,9 @@ curl -X GET 'http://localhost:3000/api/v1/rides?driver_id=1&proximity=10&page=1&
 ```
 
 #### Error Responses
+
 ---
+
 **`driver_id`**
 
 **Condition** : If `driver_id` is not provided or is invalid.
@@ -87,6 +99,7 @@ curl -X GET 'http://localhost:3000/api/v1/rides?driver_id=1&proximity=10&page=1&
 **Content** : `"Driver (ID: <id-for-non-existent-driver>) not found"`
 
 ---
+
 **`proximity`**
 
 **Condition** : If optional `proximity` provided is invalid.
@@ -96,6 +109,7 @@ curl -X GET 'http://localhost:3000/api/v1/rides?driver_id=1&proximity=10&page=1&
 **Content** : `Invalid proximity parameter, must be a positive integer less than 100`
 
 ---
+
 **`page`**
 
 **Condition** : If the 'page' parameter is invalid.
@@ -105,6 +119,7 @@ curl -X GET 'http://localhost:3000/api/v1/rides?driver_id=1&proximity=10&page=1&
 **Content** : `"Invalid page number, must be a positive integer"`
 
 ---
+
 **`rides_per_page`**
 
 **Condition** : If the 'page' parameter is invalid.
@@ -114,6 +129,7 @@ curl -X GET 'http://localhost:3000/api/v1/rides?driver_id=1&proximity=10&page=1&
 **Content** : `"Invalid rides per page, must be a positive integer"`
 
 ---
+
 Ridelister leverages the [ Google Directions API ](https://developers.google.com/maps/documentation/directions/overview) to find up-to-date directional information. If for any reason this service is unavailable, Ridelister will respond with an error, e.g.:
 
 **Code** : `503 SERVICE UNAVAILABLE`

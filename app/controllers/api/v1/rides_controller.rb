@@ -58,6 +58,9 @@ module Api
         render json: { error: "Driver (ID: #{driver_id}) not found" }, status: :not_found
       end
 
+      # TODO: Discuss breaking (or refreshing?) the caches (here and in the Ride model) when
+      # the create rides functionality is implemented. Likely a simple case would be
+      # using the Rails.cache.delete_matched() method.
       def set_rides # rubocop:disable Metrics/AbcSize,Metrics/MethodLength
         proximity = ride_params[:proximity]
         cache_key = "#{@driver_home_address}/#{proximity}/set_rides"
