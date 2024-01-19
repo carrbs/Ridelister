@@ -58,14 +58,22 @@ module Api
         render json: { error: "Driver (ID: #{driver_id}) not found" }, status: :not_found
       end
 
-      def set_rides
-        @rides = if valid_proximity?
-                   Ride.near(@driver_home_address, ride_params[:proximity])
-                 else
-                   find_rides_near_driver
-                 end
+      def set_rides # rubocop:disable Metrics/AbcSize,Metrics/MethodLength
+        proximity = ride_params[:proximity]
+        cache_key = "#{@driver_home_address}/#{proximity}/set_rides"
+        # TODO: cache hit / miss should be a log (or be removed)
+        cache_hit = Rails.cache.exist?(cache_key)
+        @rides = Rails.cache.fetch(cache_key, expires_in: 1.minutes) do
+          Rails.logger.info "Cache miss for #{cache_key}"
+          rides = if valid_proximity?
+                    Ride.near(@driver_home_address, ride_params[:proximity])
+                  else
+                    find_rides_near_driver
+                  end
+          rides.sort_by { |ride| -ride.fetch_ride(@driver_home_address)[:score] }
+        end
 
-        @rides = @rides.sort_by { |ride| -ride.fetch_ride(@driver_home_address)[:score] }
+        Rails.logger.info "Cache hit for #{cache_key}" if cache_hit
       rescue DirectionService::DirectionServiceError => e
         render json: { error: e.message }, status: :service_unavailable
       end
