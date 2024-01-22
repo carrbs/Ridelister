@@ -5,18 +5,19 @@ require 'rails_helper'
 RSpec.describe 'Api::V1::Rides', type: :request do
   let(:driver) { Driver.create!(id: 1, home_address: '123 Main St') }
   let(:ride) do
-    instance_double(Ride,
-                    id: 2,
-                    start_address: '123 B Street, Portland, OR',
-                    destination_address: '123 C Street, Portland, OR',
-                    fetch_ride: { score: 1, ride_distance: 10, ride_duration: 20, commute_distance: 5,
-                                  commute_duration: 10 })
+    Ride.create!(id: 2, start_address: '123 B Street, Portland, OR', destination_address: '123 C Street, Portland, OR')
   end
 
   let(:nearby_rides) { [ride] }
 
   before do
-    allow(Ride).to receive(:near).and_return(nearby_rides)
+    stub_request(:get, 'https://nominatim.openstreetmap.org/search')
+      .with(query: hash_including({ 'q' => '123 B Street, Portland, OR' }))
+      .to_return(body: '[{ "lat": "45.512794", "lon": "-122.679565" }]', headers: { 'Content-Type' => 'application/json' })
+
+    allow(ride).to receive(:fetch_ride).and_return({ score: 1, ride_distance: 10, ride_duration: 20,
+                                                     commute_distance: 5, commute_duration: 10 })
+    allow(Ride).to receive(:near).and_return([ride])
   end
   describe 'GET /index' do
     context 'with valid parameters' do
